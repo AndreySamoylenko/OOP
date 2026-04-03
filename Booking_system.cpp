@@ -54,7 +54,7 @@ public:
     {
         for (auto observers_it = subscribers.begin(); observers_it != subscribers.end(); ++observers_it)
         {
-            if (static_cast<Customer *>(*observers_it.base())->getName() == static_cast<Customer *>(o)->getName())
+            if ((*observers_it.base())->getName() == (o)->getName())
             {
                 subscribers.erase(observers_it);
                 o->update("you are successfully unsubscribed from " + name + " event");
@@ -75,7 +75,7 @@ public:
     {
         for (auto bookers_it = bookers.begin(); bookers_it != bookers.end(); ++bookers_it)
         {
-            if (static_cast<Customer *>(*bookers_it.base())->getName() == static_cast<Customer *>(o)->getName())
+            if ((*bookers_it.base())->getName() == (o)->getName())
             {
                 bookers.erase(bookers_it);
                 o->update("you have successfully unbooked a ticket for " + name + " event");
@@ -156,12 +156,12 @@ public:
     }
 };
 
-BookingSystem *BookingSystem::instance = nullptr;
-
 class Observer
 {
+
 public:
     virtual void update(const std::string &message) = 0;
+    virtual std::string getName() const { return ""; }
     virtual ~Observer() {}
 };
 
@@ -325,10 +325,10 @@ public:
         Event *ev = bs->get_event(e_name);
         if (ev)
         {
-            for (Observer *o : ev->getObservers())
+            std::vector<Observer *> observers = ev->getObservers();
+            for (Observer *o : observers)
             {
-                Customer *c = static_cast<Customer *>(o);
-                RefundTicket rt(bs, e_name, c);
+                RefundTicket rt(bs, e_name, static_cast<Customer *>(o));
                 rt.execute();
             }
             bs->remove_event(e_name);
@@ -425,6 +425,17 @@ class UI
 private:
     std::vector<Customer *> customers;
     BookingSystem *system;
+    Customer *get_customer(const std::string &name)
+    {
+        for (auto c : customers)
+        {
+            if (c->getName() == name)
+                return c;
+        }
+        Customer *new_c = new Customer(name);
+        customers.push_back(new_c);
+        return new_c;
+    }
 
 public:
     UI(BookingSystem *sys) : system(sys) {}
@@ -449,8 +460,7 @@ public:
         std::cout << "Enter your name: ";
         std::string name;
         std::cin >> name;
-        Customer *customer = new Customer(name);
-        customers.push_back(customer);
+        Customer *customer = get_customer(name);
         BookTicket bt(system, choice, customer);
         bt.execute();
     }
@@ -480,10 +490,17 @@ public:
         std::cout << "Enter your name: ";
         std::string name;
         std::cin >> name;
-        Customer *customer = new Customer(name);
-        customers.push_back(customer);
+        Customer *customer = get_customer(name);
         RefundTicket rt(system, choice, customer);
         rt.execute();
+        std::cout << "would you like to unsubscribe from this event? (1 - yes, 0 - no): ";
+        bool unsub;
+        std::cin >> unsub;
+        if (unsub)
+        {
+            Unsubscribe us(system, choice, customer);
+            us.execute();
+        }
     }
     void subscribe()
     {
@@ -498,8 +515,7 @@ public:
         std::cout << "Enter your name: ";
         std::string name;
         std::cin >> name;
-        Customer *customer = new Customer(name);
-        customers.push_back(customer);
+        Customer *customer = get_customer(name);
         Subscribe s(system, choice, customer);
         s.execute();
     }
@@ -516,8 +532,7 @@ public:
         std::cout << "Enter your name: ";
         std::string name;
         std::cin >> name;
-        Customer *customer = new Customer(name);
-        customers.push_back(customer);
+        Customer *customer = get_customer(name);
         Unsubscribe us(system, choice, customer);
         us.execute();
     }
