@@ -29,6 +29,34 @@ bool find(const std::vector<T *> &vec, T *item)
     return false;
 }
 
+class Observer
+{
+
+public:
+    virtual void update(const std::string &message) = 0;
+    virtual std::string getName() const { return ""; }
+    virtual ~Observer() {}
+};
+
+class Customer : public Observer
+{
+private:
+    std::string name;
+
+public:
+    Customer(const std::string &name) : name(name) {}
+
+    void update(const std::string &message) override
+    {
+        std::cout << name << " получил уведомление: " << message << std::endl;
+    }
+
+    std::string getName() const
+    {
+        return name;
+    }
+};
+
 class Event
 {
 private:
@@ -39,7 +67,19 @@ private:
     std::vector<Observer *> bookers;
 
 public:
-    Event(const std::string &n, const Date &d, const bool s) : name(n), date(d), status(s) {}
+    Event()
+    {
+        name = "";
+        date = {0, 0, 0};
+        status = false;
+    }
+    Event(const std::string &n, const Date &d, const bool s)
+    {
+        name = n;
+        date = d;
+        status = s;
+    }
+    void setName(const std::string &n) { name = n; }
 
     const Date &getDate() const { return date; }
     const std::vector<Observer *> &getObservers() const { return subscribers; }
@@ -111,10 +151,13 @@ public:
             notifyObservers(message);
         }
     }
-    ~Event()
+    void cancel()
     {
-        notifyObservers("Event " + name + " is canceled, all tickets are refunded");
+        status = false;
+        std::string message = "Event " + name + " is canceled";
+        notifyObservers(message);
     }
+
 };
 
 class BookingSystem
@@ -134,7 +177,10 @@ public:
 
     void add_event(const std::string &name, const Date &date, const bool status = true)
     {
-        Event ev(name, date, status);
+        Event ev;
+        ev.setName(name);
+        ev.setDate(date);
+        ev.setStatus(status);
         events[name] = ev;
     }
 
@@ -150,37 +196,9 @@ public:
         return nullptr;
     }
 
-    std::map<std::string, Event> &get_events()
+    std::map<std::string, Event> get_events() const
     {
         return events;
-    }
-};
-
-class Observer
-{
-
-public:
-    virtual void update(const std::string &message) = 0;
-    virtual std::string getName() const { return ""; }
-    virtual ~Observer() {}
-};
-
-class Customer : public Observer
-{
-private:
-    std::string name;
-
-public:
-    Customer(const std::string &name) : name(name) {}
-
-    void update(const std::string &message) override
-    {
-        std::cout << name << " получил уведомление: " << message << std::endl;
-    }
-
-    std::string getName() const
-    {
-        return name;
     }
 };
 
@@ -331,6 +349,7 @@ public:
                 RefundTicket rt(bs, e_name, static_cast<Customer *>(o));
                 rt.execute();
             }
+            ev->cancel();
             bs->remove_event(e_name);
             std::cout << "~ Event is successfully canceled, all tickets are refunded ~\n";
         }
@@ -455,6 +474,7 @@ public:
         {
             std::cout << pair.first << " - " << (pair.second.getStatus() ? "Available" : "Fully Booked") << "\n";
         }
+        std::cout << "Enter event name: ";
         std::string choice;
         std::cin >> choice;
         std::cout << "Enter your name: ";
@@ -472,6 +492,7 @@ public:
         {
             std::cout << pair.first << " - " << (pair.second.getStatus() ? "Available" : "Fully Booked") << "\n";
         }
+        std::cout << "Enter event name: ";
         std::string choice;
         std::cin >> choice;
         CancelEvent ce(system, choice);
@@ -485,6 +506,7 @@ public:
         {
             std::cout << pair.first << " - " << (pair.second.getStatus() ? "Available" : "Fully Booked") << "\n";
         }
+        std::cout << "Enter event name: ";
         std::string choice;
         std::cin >> choice;
         std::cout << "Enter your name: ";
@@ -510,6 +532,7 @@ public:
         {
             std::cout << pair.first << " - " << (pair.second.getStatus() ? "Available" : "Fully Booked") << "\n";
         }
+        std::cout << "Enter event name: ";
         std::string choice;
         std::cin >> choice;
         std::cout << "Enter your name: ";
@@ -527,6 +550,7 @@ public:
         {
             std::cout << pair.first << " - " << (pair.second.getStatus() ? "Available" : "Fully Booked") << "\n";
         }
+        std::cout << "Enter event name: ";
         std::string choice;
         std::cin >> choice;
         std::cout << "Enter your name: ";
@@ -541,9 +565,6 @@ public:
         std::cout << "Enter event name: ";
         std::string name;
         std::cin >> name;
-        std::cout << "Enter number of tickets: ";
-        std::size_t tickets;
-        std::cin >> tickets;
         std::cout << "Enter event date (day month year): ";
         Date date;
         std::cin >> date.day >> date.month >> date.year;
@@ -558,6 +579,7 @@ public:
         {
             std::cout << pair.first << " - " << (pair.second.getStatus() ? "Available" : "Fully Booked") << "\n";
         }
+        std::cout << "Enter event name: ";
         std::string choice;
         std::cin >> choice;
         std::cout << "Enter new date (day month year): ";
@@ -574,6 +596,7 @@ public:
         {
             std::cout << pair.first << " - " << (pair.second.getStatus() ? "Available" : "Fully Booked") << "\n";
         }
+        std::cout << "Enter event name: ";
         std::string choice;
         std::cin >> choice;
         std::cout << "Enter new status (1 - Available, 0 - Fully Booked): ";
@@ -591,7 +614,7 @@ public:
     {
         while (true)
         {
-            std::cout << "1. Book ticket\n2. Cancel event\n3. Refund ticket\n4. Exit\nChoose an option: ";
+            std::cout << "1. Subscribe to event\n2. Unsubscribe from event\n3. Book ticket\n4. Refund ticket\n5. Change event date\n6. Change event status\n7. Create event\n8. Cancel event\n9. Exit\nChoose an option: ";
             int option;
             std::cin >> option;
             switch (option)
@@ -620,9 +643,20 @@ public:
             case 8:
                 cancel();
                 break;
+            case 9:
+                exit();
+                return;
             default:
                 std::cout << "Invalid option, try again.\n";
             }
         }
     }
 };
+
+int main()
+{
+    BookingSystem &system = BookingSystem::get_instance();
+    UI ui(&system);
+    ui.main_menu();
+    return 0;
+}
