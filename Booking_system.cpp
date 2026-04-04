@@ -9,8 +9,6 @@
 #include <vector>
 #include <string>
 
-class Observer;
-
 struct Date
 {
     unsigned short int day;
