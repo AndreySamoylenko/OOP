@@ -11,6 +11,15 @@ public:
     std::string storage;
     std::string power_supply;
     std::string gpu;
+
+    void print_info(){
+        std::cout << "MB : " << motherboard << std::endl 
+                  << "CPU : " << cpu << std::endl 
+                  << "RAM amount : " << ram << "GB" << std::endl 
+                  << "Storage : " << storage << std::endl 
+                  << "PSU : " << power_supply << std::endl 
+                  << "GPU : " << gpu << std::endl ;
+    }
 };
 
 class Builder
@@ -19,7 +28,6 @@ private:
     Computer pc;
 
 public:
-    
     Builder &setMotherboard(std::string val)
     {
         pc.motherboard = val;
@@ -36,7 +44,7 @@ public:
     {
         pc.ram = val;
         return *this;
-    }
+    }  
 
     Builder &setStorage(std::string val)
     {
@@ -58,6 +66,23 @@ public:
 
     Computer build()
     {
-        return pc;
+        Computer result = pc;
+        pc = Computer();
+        return result;
     }
 };
+
+
+int main(){
+    Builder b;
+    Computer pc = b.setCPU("ryzen 9000")
+                   .setMotherboard("Asus tuf 2027 se")
+                   .setPowerSupply("KZAS 900w")
+                   .setRAM(32)
+                   .setGPU("amd 9080")
+                   .setStorage("SSD : 2TB, HDD : 2PB")
+                   .build();
+
+    pc.print_info();
+    return 0;
+}
