@@ -234,7 +234,7 @@ private:
     std::vector<AccountState> acc_history;
     int acc_state = 0;
 
-    StorageObject *find_storage(const std::string &n)
+    StorageObject *find_storage(const std::string &n) const
     {
         for (auto strg : storages)
             if (strg->storage->get_name() == n)
@@ -242,7 +242,7 @@ private:
         return nullptr;
     }
 
-    Abstract_Storage *find(const std::string &n)
+    Abstract_Storage *find(const std::string &n) const
     {
         auto strg = find_storage(n);
         return strg ? strg->storage : nullptr;
@@ -266,6 +266,7 @@ private:
             storages_state.push_back({strg->storage->get_name(), strg->storage->get_state()});
 
         acc_history.push_back({cash, storages_state});
+        acc_state = (int)acc_history.size() - 1;
     }
 
 public:
@@ -495,6 +496,10 @@ public:
         }
         // Возвращаем пустое состояние, если индекс неверен
         return AccountState{0, {}};
+    }
+    std::string get_storage_type_by_name(const std::string& name) const {
+        Abstract_Storage* s = find(name);
+        return s ? s->get_type_str() : "Удалено";
     }
 
     // ----- info -----
@@ -768,7 +773,7 @@ int main()
             std::cout << "Всего записей: " << total_states
                       << ", Текущая версия: " << current_idx << "\n\n";
 
-            int start_idx = std::max(0, total_states - 10); 
+            int start_idx = std::max(0, total_states - 10);
 
             std::cout << std::left
                       << std::setw(6) << "#"
@@ -787,10 +792,45 @@ int main()
                           << (i == current_idx ? "<—— текущая" : "") << "\n";
             }
 
-            std::cout << "\nВыберите действие:\n"
-                      << "0. Назад\n> ";
+            std::cout << "\nВведите номер версии для подробного просмотра (или -1 для отмены): ";
+            int view_idx = read_int();
+            
+            if (view_idx != -1 && view_idx < total_states) 
+            {
+                AccountState st = acc.get_acc_state_at(view_idx);
+                
+                std::cout << "\n=== Детали версии #" << view_idx << " ===\n";
+                std::cout << "Наличные: " << fmt(st.cash) << "\n";
+                std::cout << std::left 
+                          << std::setw(20) << "Название" 
+                          << std::setw(14) << "Тип" 
+                          << std::setw(14) << "Баланс" 
+                          << std::setw(12) << "%/мес" << "\n";
+                std::cout << std::string(60, '—') << "\n";
 
-            int choice = read_int();
+                double total_storage_money = 0;
+                for (const auto& storage_info : st.storages_state) {
+                    std::string name = storage_info.first;
+                    state s = storage_info.second;
+                    
+                    // Получаем тип через публичный метод аккаунта
+                    std::string type_str = acc.get_storage_type_by_name(name);
+
+                    std::cout << std::left
+                              << std::setw(20) << name
+                              << std::setw(14) << type_str
+                              << std::setw(14) << fmt(s.money)
+                              << std::setw(12) << fmt(s.monthly_interest * 100) + "%" << "\n";
+                    
+                    total_storage_money += s.money;
+                }
+                
+                std::cout << std::string(60, '—') << "\n";
+                std::cout << "Итого в этой версии: " << fmt(st.cash + total_storage_money) << "\n\n";
+            }
+            else if (view_idx != -1) {
+                std::cout << "Неверный индекс.\n";
+            }
         }
     }
 }
