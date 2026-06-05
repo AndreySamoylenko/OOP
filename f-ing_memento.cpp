@@ -2,10 +2,9 @@
 #include <sstream>
 #include <map>
 #include <vector>
-#include <iomanip>
+#include <iomanip> 
 #include <string>
-#include <limits>
-#include <algorithm>
+
 
 enum s_type
 {
@@ -474,7 +473,7 @@ std::string fmt(double v)
     return o.str();
 }
 
-static void print_table(Account &acc)
+void print_table(Account &acc)
 {
     std::cout << "\n";
     std::cout << std::left
@@ -482,9 +481,9 @@ static void print_table(Account &acc)
               << std::setw(14) << "“ип"
               << std::setw(14) << "Ѕаланс"
               << std::setw(12) << "%/мес" << "\n";
-    std::cout << std::string(60, '-') << "\n";
-    std::cout << std::left << std::setw(20) << "Ќаличные" << std::setw(14) << "-"
-              << std::setw(14) << fmt(acc.get_cash()) << std::setw(12) << "-" << "\n";
+    std::cout << std::string(60, 'Ч') << "\n";
+    std::cout << std::left << std::setw(20) << "Ќаличные" << std::setw(14) << "Ч"
+              << std::setw(14) << fmt(acc.get_cash()) << std::setw(12) << "Ч" << "\n";
     for (auto strg : acc.get_entries())
     {
         Abstract_Storage *s = strg->storage;
@@ -494,11 +493,11 @@ static void print_table(Account &acc)
                   << std::setw(14) << fmt(s->get_money())
                   << std::setw(12) << fmt(strg->snapshot->get_last_state().monthly_interest * 100) + "%" << "\n";
     }
-    std::cout << std::string(60, '-') << "\n";
+    std::cout << std::string(60, 'Ч') << "\n";
     std::cout << "»того: " << fmt(acc.total_balance()) << "\n\n";
 }
 
-static int read_int()
+int read_int()
 {
     int v;
     while (!(std::cin >> v))
@@ -510,7 +509,7 @@ static int read_int()
     std::cin.ignore(1000, '\n');
     return v;
 }
-static double read_double()
+double read_double()
 {
     double v;
     while (!(std::cin >> v))
@@ -522,7 +521,7 @@ static double read_double()
     std::cin.ignore(1000, '\n');
     return v;
 }
-static std::string read_str()
+std::string read_str()
 {
     std::string s;
     std::getline(std::cin, s);
@@ -682,7 +681,7 @@ int main()
 
             std::cout << "\n¬ерсии: " << n << "\n";
             std::cout << std::left << std::setw(6) << "#" << std::setw(14) << "Ѕаланс" << std::setw(12) << "%/мес" << "—татус\n";
-            std::cout << std::string(40, '-') << "\n";
+            std::cout << std::string(40, 'Ч') << "\n";
             for (int i = 0; i < sn->size(); i++)
             {
                 state s = sn->get_state_at(i);
@@ -690,7 +689,7 @@ int main()
                           << std::setw(6) << i
                           << std::setw(14) << fmt(s.money)
                           << std::setw(12) << fmt(s.monthly_interest * 100) + "%"
-                          << (i == sn->get_current() ? "<-- текуща€" : "") << "\n";
+                          << (i == sn->get_current() ? "<ЧЧ текуща€" : "") << "\n";
             }
             std::cout << "\n1.ѕерейти к версии  2.Undo  3.Redo\n> ";
             int choice = read_int();
