@@ -2,9 +2,8 @@
 #include <sstream>
 #include <map>
 #include <vector>
-#include <iomanip> 
+#include <iomanip>
 #include <string>
-
 
 enum s_type
 {
@@ -216,6 +215,12 @@ struct StorageObject
     }
 };
 
+struct AccountState
+{
+    double cash;
+    std::vector<std::pair<std::string, state>> storages_state;
+};
+
 class Account
 {
 private:
@@ -225,6 +230,9 @@ private:
 
     std::vector<double> cash_history;
     int cash_state = 0;
+
+    std::vector<AccountState> acc_history;
+    int acc_state = 0;
 
     StorageObject *find_storage(const std::string &n)
     {
@@ -248,10 +256,23 @@ private:
         cash_state = (int)cash_history.size() - 1;
     }
 
+    void save_acc_state()
+    {
+        while ((int)acc_history.size() - 1 > acc_state)
+            acc_history.pop_back();
+
+        std::vector<std::pair<std::string, state>> storages_state;
+        for (auto strg : storages)
+            storages_state.push_back({strg->storage->get_name(), strg->storage->get_state()});
+
+        acc_history.push_back({cash, storages_state});
+    }
+
 public:
     Account(std::string n) : name(n), cash(0)
     {
-        cash_history.push_back(0);
+        save_cash_snapshot();
+        save_acc_state();
     }
 
     ~Account()
@@ -269,6 +290,8 @@ public:
         if (find(n))
             return false;
         storages.push_back(new StorageObject(new DebitCard(n)));
+
+        save_acc_state();
         return true;
     }
     bool add_credit_card(const std::string &n)
@@ -276,6 +299,8 @@ public:
         if (find(n))
             return false;
         storages.push_back(new StorageObject(new CreditCard(n)));
+
+        save_acc_state();
         return true;
     }
     bool add_deposit(const std::string &n)
@@ -283,6 +308,8 @@ public:
         if (find(n))
             return false;
         storages.push_back(new StorageObject(new Deposit(n)));
+
+        save_acc_state();
         return true;
     }
     bool add_credit(const std::string &n)
@@ -290,6 +317,8 @@ public:
         if (find(n))
             return false;
         storages.push_back(new StorageObject(new Credit(n)));
+
+        save_acc_state();
         return true;
     }
 
@@ -301,6 +330,7 @@ public:
             {
                 delete *it;
                 storages.erase(it);
+                save_acc_state();
                 return true;
             }
         }
@@ -334,7 +364,6 @@ public:
         strg->snapshot->add_state(strg->storage);
         return true;
     }
-
     bool withdraw_from(const std::string &n, double amount)
     {
         StorageObject *strg = find_storage(n);
@@ -366,17 +395,6 @@ public:
         return result;
     }
 
-    bool set_interest(const std::string &n, double i)
-    {
-        StorageObject *strg = find_storage(n);
-        if (!strg)
-            return false;
-        bool r = strg->storage->set_interest(i);
-        if (r)
-            strg->snapshot->add_state(strg->storage);
-        return r;
-    }
-
     bool direct_deposit(const std::string &n, double amount)
     {
         StorageObject *strg = find_storage(n);
@@ -386,7 +404,6 @@ public:
         strg->snapshot->add_state(strg->storage);
         return true;
     }
-
     bool direct_withdraw(const std::string &n, double amount)
     {
         StorageObject *strg = find_storage(n);
@@ -398,6 +415,19 @@ public:
         return r;
     }
 
+    bool set_interest(const std::string &n, double i)
+    {
+        StorageObject *strg = find_storage(n);
+        if (!strg)
+            return false;
+        bool r = strg->storage->set_interest(i);
+        if (r)
+        {
+            strg->snapshot->add_state(strg->storage);
+            save_acc_state();
+        }
+        return r;
+    }
     void monthly_interest_processing()
     {
         for (auto strg : storages)
@@ -440,7 +470,6 @@ public:
         cash = cash_history[cash_state];
         return true;
     }
-
     bool redo_cash()
     {
         if (cash_state >= (int)cash_history.size() - 1)
@@ -448,6 +477,24 @@ public:
         cash_state++;
         cash = cash_history[cash_state];
         return true;
+    }
+
+    int get_acc_history_size() const
+    {
+        return (int)acc_history.size();
+    }
+    int get_acc_current_state() const
+    {
+        return acc_state;
+    }
+    AccountState get_acc_state_at(int index) const
+    {
+        if (index >= 0 && index < (int)acc_history.size())
+        {
+            return acc_history.at(index);
+        }
+        // Возвращаем пустое состояние, если индекс неверен
+        return AccountState{0, {}};
     }
 
     // ----- info -----
@@ -544,6 +591,7 @@ int main()
                   << "4. Удалить хранилище\n"
                   << "5. Начислить проценты\n"
                   << "6. История версий\n"
+                  << "7. История состояний Аккаунта\n"
                   << "0. Выход\n> ";
         int chosen_action = read_int();
 
@@ -710,6 +758,39 @@ int main()
                 if (!acc.redo_storage(n))
                     std::cout << "Нечего повторять\n";
             }
+        }
+        else if (chosen_action == 7)
+        {
+            std::cout << "\n--- История состояний Аккаунта ---\n";
+            int total_states = acc.get_acc_history_size();
+            int current_idx = acc.get_acc_current_state();
+
+            std::cout << "Всего записей: " << total_states
+                      << ", Текущая версия: " << current_idx << "\n\n";
+
+            int start_idx = std::max(0, total_states - 10); 
+
+            std::cout << std::left
+                      << std::setw(6) << "#"
+                      << std::setw(14) << "Наличные"
+                      << std::setw(14) << "Хранилищ"
+                      << "Статус\n";
+            std::cout << std::string(40, '—') << "\n";
+
+            for (int i = start_idx; i < total_states; ++i)
+            {
+                AccountState st = acc.get_acc_state_at(i);
+                std::cout << std::left
+                          << std::setw(6) << i
+                          << std::setw(14) << fmt(st.cash)
+                          << std::setw(14) << st.storages_state.size()
+                          << (i == current_idx ? "<—— текущая" : "") << "\n";
+            }
+
+            std::cout << "\nВыберите действие:\n"
+                      << "0. Назад\n> ";
+
+            int choice = read_int();
         }
     }
 }
