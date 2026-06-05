@@ -147,6 +147,7 @@ public:
     }
 };
 
+
 class Snapshot
 {
     std::vector<state> history;
@@ -170,8 +171,7 @@ public:
     }
 
     state get_last_state() const { return history.back(); }
-
-    state get_state_at(int index)
+    state get_state_at(int index) const
     {
         if (index >= 0 && index < (int)history.size())
             return history.at(index);
@@ -189,7 +189,6 @@ public:
         target->set_state(history[current_state]);
         return true;
     }
-
     bool redo(Abstract_Storage *target)
     {
         if (current_state >= (int)history.size() - 1)
@@ -206,14 +205,6 @@ public:
         current_state = index;
         target->set_state(history[index]);
         return true;
-    }
-
-    // View without applying
-    state peek_state(int index)
-    {
-        if (index < 0 || index >= (int)history.size())
-            return state{0, 0};
-        return history[index];
     }
 };
 
@@ -862,7 +853,7 @@ void menu_history(Account &acc)
 
             for (int i = 0; i < sn->size(); i++)
             {
-                state s = sn->peek_state(i);
+                state s = sn->get_state_at(i);
                 std::string status = (i == sn->get_current()) ? (BOLD + GREEN + "? текущая" + RESET) : "";
                 std::cout << std::left
                           << std::setw(6) << i
