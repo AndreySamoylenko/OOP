@@ -826,7 +826,7 @@ int main()
                 }
                 
                 std::cout << std::string(60, '—') << "\n";
-                std::cout << "Итого в этой версии: " << fmt(st.cash + total_storage_money) << "\n\n";
+                std::cout << "Итого в этой версии: " << fmt(st.cash + total_storage_money) << "\n\n";   
             }
             else if (view_idx != -1) {
                 std::cout << "Неверный индекс.\n";
